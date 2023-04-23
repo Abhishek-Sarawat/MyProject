@@ -1,0 +1,27 @@
+Step 1: Install the required libraries:
+
+
+pip install google-auth google-auth-oauthlib google-auth-httplib2 google-api-python-client Django
+
+
+Step 2: Replace the path/to/client_secrets.json in the code with the actual path to your client_secrets.json file. You can obtain this file by creating a new project on the Google Cloud Console and enabling the Google Calendar API for it.
+
+Step 3: Start the Django development server
+
+python manage.py runserver
+
+
+Step 4: Open your web browser and navigate to http://localhost:8000/calendar/init/. This will initiate the OAuth2 flow and redirect you to the Google authorization page.
+
+Step 5: Follow the instructions on the Google authorization page to grant access to your Google Calendar.
+
+Step 6 : After granting access, you will be redirected back to your Django app at http://localhost:8000/calendar/redirect/, and the list of the user's calendar events will be displayed in the browser.
+
+
+NOTE: 
+
+In order to actually access the user's calendar events, you will need to modify the code to perform the necessary operations on the events object returned by the Google Calendar API.
+
+
+
+

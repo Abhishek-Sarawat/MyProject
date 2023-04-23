@@ -1,0 +1,7 @@
+from django.urls import path
+from . import views
+
+urlpatterns = [
+    path('calendar/init/', views.GoogleCalendarInitView, name='google-calendar-init'),
+    path('calendar/redirect/', views.GoogleCalendarRedirectView, name='google-calendar-redirect'),
+]

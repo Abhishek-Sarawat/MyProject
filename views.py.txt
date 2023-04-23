@@ -1,0 +1,53 @@
+from django.http import HttpResponseBadRequest, HttpResponseRedirect
+from django.urls import reverse
+from google.oauth2.credentials import Credentials
+from google_auth_oauthlib.flow import Flow
+from googleapiclient.discovery import build
+from datetime import datetime
+
+def GoogleCalendarInitView(request):
+    """
+    Initiates the OAuth2 flow for accessing a user's Google Calendar.
+    """
+    # Set up the OAuth2 flow with the necessary scopes and redirect URI
+    flow = Flow.from_client_secrets_file(
+        'path/to/client_secrets.json',
+        scopes=['https://www.googleapis.com/auth/calendar.events.readonly'],
+        redirect_uri=request.build_absolute_uri(reverse('google-calendar-redirect'))
+    )
+    # Generate the authorization URL and save the state to prevent CSRF attacks
+    authorization_url, state = flow.authorization_url(
+        access_type='offline',
+        include_granted_scopes='true'
+    )
+    request.session['google_auth_state'] = state
+    # Redirect the user to the authorization URL
+    return HttpResponseRedirect(authorization_url)
+
+def GoogleCalendarRedirectView(request):
+    """
+    Handles the redirect after the user has authorized access to their Google Calendar.
+    """
+    # Verify the state to prevent CSRF attacks
+    if 'google_auth_state' not in request.session or request.GET.get('state') != request.session['google_auth_state']:
+        return HttpResponseBadRequest()
+    # Exchange the authorization code for an access token and refresh token
+    flow = Flow.from_client_secrets_file(
+        'path/to/client_secrets.json',
+        scopes=['https://www.googleapis.com/auth/calendar.events.readonly'],
+        redirect_uri=request.build_absolute_uri(reverse('google-calendar-redirect'))
+    )
+    flow.fetch_token(authorization_response=request.build_absolute_uri())
+    # Use the access token to retrieve the user's calendar events
+    credentials = flow.credentials
+    service = build('calendar', 'v3', credentials=credentials)
+    events_result = service.events().list(
+        calendarId='primary',
+        timeMin=datetime.utcnow().isoformat() + 'Z',
+        maxResults=10,
+        singleEvents=True,
+        orderBy='startTime'
+    ).execute()
+    events = events_result.get('items', [])
+    # Return the list of events as an HTTP response
+    return HttpResponse(str(events))
